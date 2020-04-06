@@ -125,15 +125,29 @@ func SignIn(response http.ResponseWriter, request *http.Request) {
 
 // ResetPasswordLink forget password for user request handler
 func ResetPasswordLink(response http.ResponseWriter, request *http.Request) {
-	var user models.User
-	json.NewDecoder(request.Body).Decode(&user)
-	dbUser, err := fetchUserByEmail(user.EMAIL)
+	var payload models.ResetPasswordLink
+
+	decoderError := json.NewDecoder(request.Body).Decode(&payload)
+	if decoderError != nil {
+		utils.GetError(decoderError, response)
+		return
+	}
+
+	validationError := validate.Struct(payload)
+	if validationError != nil {
+		fmt.Println(validationError.(validator.ValidationErrors)[0].Translate(trans))
+		utils.GetError(errors.New(validationError.(validator.ValidationErrors)[0].Translate(trans)), response)
+		return
+	}
+
+	dbUser, err := fetchUserByEmail(payload.EMAIL)
 	if err != nil {
-		fmt.Println("Error occurred while fetching user byu email")
+		fmt.Println("Error occurred while fetching user by email")
 		fmt.Println(err)
 		utils.GetError(err, response)
 		return
 	}
+
 	token, tokenError := auth.GenerateToken(dbUser)
 	if tokenError != nil {
 		fmt.Println("Error occurred while generating token")
@@ -141,6 +155,7 @@ func ResetPasswordLink(response http.ResponseWriter, request *http.Request) {
 		utils.GetError(tokenError, response)
 		return
 	}
+	// Send email to request user with reset password link
 	emailBody := "Reset Password Link: \n http://localhost:8000/?token=" + token
 	isEmailSend, emailError := sendEmail(emailBody, dbUser)
 	if !isEmailSend && emailError != nil {

@@ -17,3 +17,8 @@ type SignInPayload struct {
 	EMAIL    string `validate:"required,email"`
 	PASSWORD string `validate:"required,min=6,max=10"`
 }
+
+// ResetPasswordLink
+type ResetPasswordLink struct {
+	EMAIL string `validate:"required,email"`
+}
