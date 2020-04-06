@@ -8,8 +8,8 @@ type ResetPasswordToken struct {
 	Token string             `json:"token,omitempty" bson:"token,omitempty"`
 }
 
-// ResetPasswordTokenPayload s
-type ResetPasswordTokenPayload struct {
-	Password string
-	Token    string
+// ResetPassword
+type ResetPassword struct {
+	Password string `validate:"required,min=6,max=10"`
+	Token    string `validate:"required"`
 }

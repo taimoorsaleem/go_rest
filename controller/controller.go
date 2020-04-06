@@ -181,14 +181,24 @@ func ResetPasswordLink(response http.ResponseWriter, request *http.Request) {
 
 // ResetPassword reset user password of provided token
 func ResetPassword(response http.ResponseWriter, request *http.Request) {
-	var resetTokenPayload models.ResetPasswordTokenPayload
-	json.NewDecoder(request.Body).Decode(&resetTokenPayload)
-
+	var payload models.ResetPassword
+	decoderError := json.NewDecoder(request.Body).Decode(&payload)
+	if decoderError != nil {
+		utils.GetError(decoderError, response)
+		return
+	}
+	// validation payload
+	validationError := validate.Struct(payload)
+	if validationError != nil {
+		fmt.Println(validationError.(validator.ValidationErrors)[0].Translate(trans))
+		utils.GetError(errors.New(validationError.(validator.ValidationErrors)[0].Translate(trans)), response)
+		return
+	}
 	// Fetch reset token document by provided token
 	var resetPasswordToken models.ResetPasswordToken
 	resetTokenCollection := utils.GetCollection(utils.GetResetTokenTable())
 	resetPasswordTokenError := resetTokenCollection.FindOne(context.TODO(), bson.M{
-		"token": resetTokenPayload.Token,
+		"token": payload.Token,
 	}).Decode(&resetPasswordToken)
 	if resetPasswordTokenError != nil {
 		fmt.Println("Error occurred while checking provided token")
@@ -197,7 +207,7 @@ func ResetPassword(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 	// Generate password hash
-	password, _ := auth.GeneratePassword(resetTokenPayload.Password)
+	password, _ := auth.GeneratePassword(payload.Password)
 	updatePayload := bson.D{{
 		"$set", bson.D{
 			{"password", password},
