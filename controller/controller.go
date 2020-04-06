@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"golang-assignment/models"
 	"golang-assignment/utils"
@@ -16,12 +17,33 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"github.com/go-playground/locales/en"
+	ut "github.com/go-playground/universal-translator"
+	"github.com/go-playground/validator/v10"
+	en_translations "github.com/go-playground/validator/v10/translations/en"
 )
+
+var trans ut.Translator
+var validate *validator.Validate
 
 // SignUp controller request handler
 func SignUp(response http.ResponseWriter, request *http.Request) {
 	var user models.User
-	json.NewDecoder(request.Body).Decode(&user)
+
+	decoderError := json.NewDecoder(request.Body).Decode(&user)
+	if decoderError != nil {
+		utils.GetError(decoderError, response)
+		return
+	}
+
+	validationError := validate.Struct(user)
+	if validationError != nil {
+		fmt.Println(validationError.(validator.ValidationErrors)[0].Translate(trans))
+		utils.GetError(errors.New(validationError.(validator.ValidationErrors)[0].Translate(trans)), response)
+		return
+	}
+
 	user.PASSWORD, _ = auth.GeneratePassword(user.PASSWORD)
 	userCollection := utils.GetCollection(utils.GetUserTable())
 	insertedUser, insertError := userCollection.InsertOne(context.TODO(), user)
@@ -31,8 +53,8 @@ func SignUp(response http.ResponseWriter, request *http.Request) {
 		utils.GetError(insertError, response)
 		return
 	}
-
 	user.ID, _ = insertedUser.InsertedID.(primitive.ObjectID)
+
 	token, tokenError := auth.GenerateToken(user)
 	if tokenError != nil {
 		fmt.Println("Error occurred while creating user")
@@ -274,4 +296,33 @@ func fetchUsers() []models.User {
 		fmt.Println(cursorError)
 	}
 	return users
+}
+
+func init() {
+	en := en.New()
+	uni := ut.New(en, en)
+	var found bool
+	trans, found = uni.GetTranslator("en")
+	if !found {
+		fmt.Print("translator not found")
+	}
+	validate = validator.New()
+	if err := en_translations.RegisterDefaultTranslations(validate, trans); err != nil {
+		fmt.Print(err)
+	}
+
+	_ = validate.RegisterTranslation("required", trans, func(ut ut.Translator) error {
+		return ut.Add("required", "{0} is a required field", true) // see universal-translator for details
+	}, func(ut ut.Translator, fe validator.FieldError) string {
+		t, _ := ut.T("required", fe.Field())
+		return t
+	})
+
+	_ = validate.RegisterTranslation("email", trans, func(ut ut.Translator) error {
+		return ut.Add("email", "{0} must be a valid email", true) // see universal-translator for details
+	}, func(ut ut.Translator, fe validator.FieldError) string {
+		t, _ := ut.T("email", fe.Field())
+		return t
+	})
+
 }
