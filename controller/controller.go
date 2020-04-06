@@ -63,7 +63,7 @@ func SignUp(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	var payload = map[string]interface{}{
+	var reqResponse = map[string]interface{}{
 		"status":  true,
 		"message": "User Signup successfully!",
 		"id":      user.ID,
@@ -71,22 +71,33 @@ func SignUp(response http.ResponseWriter, request *http.Request) {
 		"email":   user.EMAIL,
 		"token":   token,
 	}
-	json.NewEncoder(response).Encode(payload)
+	json.NewEncoder(response).Encode(reqResponse)
 }
 
 // SignIn user request handler
 func SignIn(response http.ResponseWriter, request *http.Request) {
-	var user models.User
-	json.NewDecoder(request.Body).Decode(&user)
+	var payload models.SignInPayload
+	decoderError := json.NewDecoder(request.Body).Decode(&payload)
+	if decoderError != nil {
+		utils.GetError(decoderError, response)
+		return
+	}
 
-	dbUser, err := fetchUserByEmail(user.EMAIL)
+	validationError := validate.Struct(payload)
+	if validationError != nil {
+		fmt.Println(validationError.(validator.ValidationErrors)[0].Translate(trans))
+		utils.GetError(errors.New(validationError.(validator.ValidationErrors)[0].Translate(trans)), response)
+		return
+	}
+
+	dbUser, err := fetchUserByEmail(payload.EMAIL)
 	if err != nil {
 		fmt.Println("Error occurred while creating user")
 		fmt.Println(err)
 		utils.GetError(err, response)
 		return
 	}
-	if isMatch, passError := auth.CompareHashAndPassword(dbUser.PASSWORD, user.PASSWORD); !isMatch && passError != nil {
+	if isMatch, passError := auth.CompareHashAndPassword(dbUser.PASSWORD, payload.PASSWORD); !isMatch && passError != nil {
 		fmt.Println("Invalid login credentials")
 		fmt.Println(passError)
 		utils.GetError(passError, response)
@@ -101,7 +112,7 @@ func SignIn(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	var payload = map[string]interface{}{
+	var reqResponse = map[string]interface{}{
 		"status":  true,
 		"message": "User Logged in successfully!",
 		"id":      dbUser.ID,
@@ -109,7 +120,7 @@ func SignIn(response http.ResponseWriter, request *http.Request) {
 		"email":   dbUser.EMAIL,
 		"token":   token,
 	}
-	json.NewEncoder(response).Encode(payload)
+	json.NewEncoder(response).Encode(reqResponse)
 }
 
 // ResetPasswordLink forget password for user request handler
