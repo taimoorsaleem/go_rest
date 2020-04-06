@@ -12,6 +12,6 @@ type Token struct {
 
 // ChangePassword for pass
 type ChangePassword struct {
-	Password    string
-	NewPassword string
+	Password    string `validate:"required,min=6,max=10"`
+	NewPassword string `validate:"required,min=6,max=10"`
 }

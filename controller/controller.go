@@ -126,20 +126,19 @@ func SignIn(response http.ResponseWriter, request *http.Request) {
 // ResetPasswordLink forget password for user request handler
 func ResetPasswordLink(response http.ResponseWriter, request *http.Request) {
 	var payload models.ResetPasswordLink
-
 	decoderError := json.NewDecoder(request.Body).Decode(&payload)
 	if decoderError != nil {
 		utils.GetError(decoderError, response)
 		return
 	}
-
+	// validate payload
 	validationError := validate.Struct(payload)
 	if validationError != nil {
 		fmt.Println(validationError.(validator.ValidationErrors)[0].Translate(trans))
 		utils.GetError(errors.New(validationError.(validator.ValidationErrors)[0].Translate(trans)), response)
 		return
 	}
-
+	// fetch DB user
 	dbUser, err := fetchUserByEmail(payload.EMAIL)
 	if err != nil {
 		fmt.Println("Error occurred while fetching user by email")
@@ -147,7 +146,7 @@ func ResetPasswordLink(response http.ResponseWriter, request *http.Request) {
 		utils.GetError(err, response)
 		return
 	}
-
+	// generate token
 	token, tokenError := auth.GenerateToken(dbUser)
 	if tokenError != nil {
 		fmt.Println("Error occurred while generating token")
@@ -164,15 +163,14 @@ func ResetPasswordLink(response http.ResponseWriter, request *http.Request) {
 		utils.GetError(emailError, response)
 		return
 	}
-
+	// set
 	resetTokenCollection := utils.GetCollection(utils.GetResetTokenTable())
-	var updatedDocument bson.M
+	// var updatedDocument bson.M
 	opt := options.FindOneAndUpdate().SetUpsert(true)
 	resetTokenCollection.FindOneAndUpdate(
 		context.TODO(),
 		bson.D{{"_id", dbUser.ID}},
-		bson.D{{"$set", bson.D{{"token", token}}}}, opt).Decode(updatedDocument)
-
+		bson.D{{"$set", bson.D{{"token", token}}}}, opt) //.Decode(updatedDocument)
 	json.NewEncoder(response).Encode(map[string]string{
 		"Message": "link created succssfully!",
 		"link":    emailBody,
@@ -187,7 +185,7 @@ func ResetPassword(response http.ResponseWriter, request *http.Request) {
 		utils.GetError(decoderError, response)
 		return
 	}
-	// validation payload
+	// validate payload
 	validationError := validate.Struct(payload)
 	if validationError != nil {
 		fmt.Println(validationError.(validator.ValidationErrors)[0].Translate(trans))
@@ -225,9 +223,21 @@ func ResetPassword(response http.ResponseWriter, request *http.Request) {
 
 // ChangePassword request handler
 func ChangePassword(response http.ResponseWriter, request *http.Request) {
-	resetPayload := &models.ChangePassword{}
+	var payload models.ChangePassword
+	decoderError := json.NewDecoder(request.Body).Decode(&payload)
+	if decoderError != nil {
+		utils.GetError(decoderError, response)
+		return
+	}
+	// validate payload
+	validationError := validate.Struct(payload)
+	if validationError != nil {
+		fmt.Println(validationError.(validator.ValidationErrors)[0].Translate(trans))
+		utils.GetError(errors.New(validationError.(validator.ValidationErrors)[0].Translate(trans)), response)
+		return
+	}
+	// fetch users
 	user := utils.GetContextTokenClaims(request.Context())
-	json.NewDecoder(request.Body).Decode(&resetPayload)
 	dbUser, err := fetchUserByEmail(user.Email)
 	if err != nil {
 		fmt.Println("Error occurred while fetching user")
@@ -235,19 +245,22 @@ func ChangePassword(response http.ResponseWriter, request *http.Request) {
 		utils.GetError(err, response)
 		return
 	}
-	if isMatch, passError := auth.CompareHashAndPassword(dbUser.PASSWORD, resetPayload.Password); !isMatch && passError != nil {
+	// compare password
+	if isMatch, passError := auth.CompareHashAndPassword(dbUser.PASSWORD, payload.Password); !isMatch && passError != nil {
 		fmt.Println("Invalid login credentials")
 		fmt.Println(passError)
 		utils.GetError(passError, response)
 		return
 	}
-	password, _ := auth.GeneratePassword(resetPayload.NewPassword)
+	// generate new password
+	password, _ := auth.GeneratePassword(payload.NewPassword)
 	updatePayload := bson.D{{
 		"$set", bson.D{
 			{"password", password},
 		},
 	},
 	}
+	// Update new password
 	findAndUpdate(dbUser.ID, updatePayload)
 	json.NewEncoder(response).Encode(map[string]string{
 		"Message": "Password updated successfully!",
