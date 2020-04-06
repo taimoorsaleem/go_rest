@@ -76,7 +76,7 @@ func SignUp(response http.ResponseWriter, request *http.Request) {
 
 // SignIn user request handler
 func SignIn(response http.ResponseWriter, request *http.Request) {
-	var payload models.SignInPayload
+	var payload models.SignIn
 	decoderError := json.NewDecoder(request.Body).Decode(&payload)
 	if decoderError != nil {
 		utils.GetError(decoderError, response)
