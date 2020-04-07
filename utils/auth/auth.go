@@ -16,11 +16,29 @@ import (
 
 // GenerateToken generate token with provided user claims
 func GenerateToken(user models.User) (string, error) {
-	expiresAt := time.Now().Add(time.Minute * 100000).Unix()
+	expiresAt := time.Now().Add(time.Minute * 2880).Unix()
 	tokenClaims := &models.Token{
 		ID:    user.ID.String(),
 		Name:  user.NAME,
 		Email: user.EMAIL,
+		StandardClaims: &jwt.StandardClaims{
+			ExpiresAt: expiresAt,
+		},
+	}
+	encodedToken := jwt.NewWithClaims(jwt.GetSigningMethod("HS256"), tokenClaims)
+	token, err := encodedToken.SignedString([]byte("secret"))
+	if err != nil {
+		fmt.Println("Error occurred while hashing password", err)
+		return "", err
+	}
+	return token, nil
+}
+
+// GenerateRefreshToken generate token with provided user claims
+func GenerateRefreshToken(user models.User) (string, error) {
+	expiresAt := time.Now().Add(time.Minute * 10000).Unix()
+	tokenClaims := &models.Token{
+		ID: user.ID.String(),
 		StandardClaims: &jwt.StandardClaims{
 			ExpiresAt: expiresAt,
 		},

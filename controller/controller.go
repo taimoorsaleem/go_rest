@@ -62,14 +62,22 @@ func SignUp(response http.ResponseWriter, request *http.Request) {
 		utils.GetError(tokenError, response)
 		return
 	}
+	refreshToken, refreshTokenError := auth.GenerateRefreshToken(user)
+	if refreshTokenError != nil {
+		fmt.Println("Error occurred while creating user")
+		fmt.Println(refreshTokenError)
+		utils.GetError(refreshTokenError, response)
+		return
+	}
 
 	var reqResponse = map[string]interface{}{
-		"status":  true,
-		"message": "User Signup successfully!",
-		"id":      user.ID,
-		"name":    user.NAME,
-		"email":   user.EMAIL,
-		"token":   token,
+		"status":       true,
+		"message":      "User Signup successfully!",
+		"id":           user.ID,
+		"name":         user.NAME,
+		"email":        user.EMAIL,
+		"token":        token,
+		"refreshToken": refreshToken,
 	}
 	json.NewEncoder(response).Encode(reqResponse)
 }
