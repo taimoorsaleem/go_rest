@@ -14,7 +14,8 @@ import (
 var connectionString = ""
 var databaseName = ""
 var userTabel string = "user"
-var resetPasswordToken string = "reset-token"
+var resetPasswordTokenTable string = "reset-token"
+var authenticationTokenTable string = "authentication-token"
 
 // connectDB Get database connection client
 func connectDB() *mongo.Client {
@@ -38,7 +39,12 @@ func GetUserTable() string {
 
 // GetResetTokenTable Get table name for users reset token
 func GetResetTokenTable() string {
-	return resetPasswordToken
+	return resetPasswordTokenTable
+}
+
+// GetAuthenticationTokenTable Get authentication token
+func GetAuthenticationTokenTable() string {
+	return authenticationTokenTable
 }
 
 func getDatabaseName() string {

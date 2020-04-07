@@ -70,6 +70,19 @@ func SignUp(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
+	var accessTokenPayload = models.AuthenticationToken{
+		ACCESSTOKEN:  token,
+		REFRESHTOKEN: refreshToken,
+		USERID:       user.ID,
+	}
+	_, upsertError := upsertAuthenticationToken(accessTokenPayload)
+	if insertError != nil {
+		fmt.Println("Error occurred while upsert access token")
+		fmt.Println(upsertError)
+		utils.GetError(upsertError, response)
+		return
+	}
+
 	var reqResponse = map[string]interface{}{
 		"status":       true,
 		"message":      "User Signup successfully!",
@@ -171,7 +184,6 @@ func ResetPasswordLink(response http.ResponseWriter, request *http.Request) {
 		utils.GetError(emailError, response)
 		return
 	}
-	// set
 	resetTokenCollection := utils.GetCollection(utils.GetResetTokenTable())
 	// var updatedDocument bson.M
 	opt := options.FindOneAndUpdate().SetUpsert(true)
@@ -355,6 +367,37 @@ func fetchUsers() []models.User {
 	return users
 }
 
+// upsertAuthenticationToken user access and refresh token
+func upsertAuthenticationToken(authenticationToken models.AuthenticationToken) (bool, error) {
+	authenticationTokenCollection := utils.GetCollection(utils.GetAuthenticationTokenTable())
+	option := options.FindOneAndUpdate().SetUpsert(true)
+	upsertToken := authenticationTokenCollection.FindOneAndUpdate(
+		context.TODO(),
+		bson.D{{"_id", authenticationToken.ID}},
+		bson.D{{"$set", bson.D{
+			bson.E{"access_token", authenticationToken.ACCESSTOKEN},
+			bson.E{"refresh_token", authenticationToken.REFRESHTOKEN},
+			bson.E{"userid", authenticationToken.USERID},
+		}}}, option)
+
+	if upsertToken.Err() != nil {
+		return false, upsertToken.Err()
+	}
+	return true, nil
+}
+
+// FetchAuthenticationToken fetch authentication tokens
+func FetchAuthenticationToken(filter bson.M) (models.AuthenticationToken, error) {
+	var authenticationToken models.AuthenticationToken
+	authenticationTokenCollection := utils.GetCollection(utils.GetAuthenticationTokenTable())
+	err := authenticationTokenCollection.FindOne(context.TODO(), filter).Decode(&authenticationToken)
+	if err != nil {
+		fmt.Println("Error occurred while fetching authentication ", err)
+		return authenticationToken, err
+	}
+	return authenticationToken, nil
+}
+
 func init() {
 	en := en.New()
 	uni := ut.New(en, en)
@@ -381,5 +424,4 @@ func init() {
 		t, _ := ut.T("email", fe.Field())
 		return t
 	})
-
 }
