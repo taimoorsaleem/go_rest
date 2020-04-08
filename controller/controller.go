@@ -97,7 +97,7 @@ func ResetPasswordLink(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 	json.NewEncoder(response).Encode(map[string]string{
-		"Message": "link created succssfully!",
+		"Message": "Reset Password link has been sent on email address",
 	})
 }
 
@@ -130,51 +130,36 @@ func ResetPassword(response http.ResponseWriter, request *http.Request) {
 	})
 }
 
-// // ChangePassword request handler
-// func ChangePassword(response http.ResponseWriter, request *http.Request) {
-// 	var payload models.ChangePassword
-// 	decoderError := json.NewDecoder(request.Body).Decode(&payload)
-// 	if decoderError != nil {
-// 		utils.GetError(decoderError, response)
-// 		return
-// 	}
-// 	// validate payload
-// 	validationError := validate.Struct(payload)
-// 	if validationError != nil {
-// 		fmt.Println(validationError.(validator.ValidationErrors)[0].Translate(trans))
-// 		utils.GetError(errors.New(validationError.(validator.ValidationErrors)[0].Translate(trans)), response)
-// 		return
-// 	}
-// 	// fetch users
-// 	user := utils.GetContextTokenClaims(request.Context())
-// 	dbUser, err := fetchUserByEmail(user.Email)
-// 	if err != nil {
-// 		fmt.Println("Error occurred while fetching user")
-// 		fmt.Println(err)
-// 		utils.GetError(err, response)
-// 		return
-// 	}
-// 	// compare password
-// 	if isMatch, passError := auth.CompareHashAndPassword(dbUser.PASSWORD, payload.Password); !isMatch && passError != nil {
-// 		fmt.Println("Invalid login credentials")
-// 		fmt.Println(passError)
-// 		utils.GetError(passError, response)
-// 		return
-// 	}
-// 	// generate new password
-// 	password, _ := auth.GeneratePassword(payload.NewPassword)
-// 	updatePayload := bson.D{{
-// 		"$set", bson.D{
-// 			{"password", password},
-// 		},
-// 	},
-// 	}
-// 	// Update new password
-// 	findAndUpdate(dbUser.ID, updatePayload)
-// 	json.NewEncoder(response).Encode(map[string]string{
-// 		"Message": "Password updated successfully!",
-// 	})
-// }
+// ChangePassword request handler
+func ChangePassword(response http.ResponseWriter, request *http.Request) {
+	// Decode request payload
+	var payload payloadmodels.ChangePassword
+	decoderError := json.NewDecoder(request.Body).Decode(&payload)
+	if decoderError != nil {
+		utils.GetError(decoderError, response)
+		return
+	}
+	// validate payload
+	validationError := validate.Struct(payload)
+	if validationError != nil {
+		fmt.Println(validationError.(validator.ValidationErrors)[0].Translate(trans))
+		utils.GetError(errors.New(validationError.(validator.ValidationErrors)[0].Translate(trans)), response)
+		return
+	}
+	// fetch token claims form request context
+	user := utils.GetContextTokenClaims(request.Context())
+	// change password
+	_, changePasswordError := userservice.ChangePassword(payload, user)
+	if changePasswordError != nil {
+		fmt.Println("Error occurred while changing password")
+		fmt.Println(changePasswordError)
+		utils.GetError(changePasswordError, response)
+		return
+	}
+	json.NewEncoder(response).Encode(map[string]string{
+		"Message": "Password updated successfully!",
+	})
+}
 
 // // FetchUsers fetch all user request handler
 // func FetchUsers(response http.ResponseWriter, request *http.Request) {

@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"golang-assignment/models"
 	"golang-assignment/models/entities"
+	"golang-assignment/models/payloadmodels"
 	"golang-assignment/utils"
 	"net/http"
 	"strings"
@@ -18,7 +18,7 @@ import (
 // GenerateToken generate token with provided user claims
 func GenerateToken(user *entities.User) (string, error) {
 	expiresAt := time.Now().Add(time.Minute * 100000).Unix()
-	tokenClaims := &models.Token{
+	tokenClaims := &payloadmodels.Token{
 		ID:    user.ID.String(),
 		Name:  user.NAME,
 		Email: user.EMAIL,
@@ -64,7 +64,7 @@ func AuthenticateMiddleware(next http.Handler) http.Handler {
 			json.NewEncoder(response).Encode(map[string]interface{}{"Message": "Missing auth token"})
 			return
 		}
-		tokenClaims := &models.Token{}
+		tokenClaims := &payloadmodels.Token{}
 		_, err := jwt.ParseWithClaims(token, tokenClaims, func(token *jwt.Token) (interface{}, error) {
 			return []byte("secret"), nil
 		})

@@ -143,6 +143,33 @@ func ResetPassword(payload payloadmodels.ResetPassword) (bool, error) {
 	return true, nil
 }
 
+// ChangePassword change user password
+func ChangePassword(payload payloadmodels.ChangePassword, user *payloadmodels.Token) (bool, error) {
+	dbUser, fetchUserError := fetchUserByEmail(user.Email)
+	if fetchUserError != nil {
+		fmt.Println("Error occurred while fetching user")
+		fmt.Println(fetchUserError)
+		return false, fetchUserError
+	}
+	// compare database and payload password
+	if isMatch, passError := auth.CompareHashAndPassword(dbUser.PASSWORD, payload.Password); !isMatch && passError != nil {
+		fmt.Println("Invalid login credentials")
+		fmt.Println(passError)
+		return false, passError
+	}
+	// generate new password
+	password, _ := auth.GeneratePassword(payload.NewPassword)
+	// update user password
+	updatePayload := bson.D{{
+		"$set", bson.D{
+			{"password", password},
+		},
+	},
+	}
+	findAndUpdate(dbUser.ID, updatePayload)
+	return true, nil
+}
+
 //***************************
 
 // fetchUserByEmail fetch user by email and return user object
