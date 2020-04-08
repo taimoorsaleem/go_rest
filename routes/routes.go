@@ -11,7 +11,7 @@ import (
 func Handlers() *mux.Router {
 	router := mux.NewRouter()
 	router.HandleFunc("/api/signup", controller.SignUp).Methods("POST")
-	// router.HandleFunc("/api/signin", controller.SignIn).Methods("POST")
+	router.HandleFunc("/api/signin", controller.SignIn).Methods("POST")
 	// router.HandleFunc("/api/resetPasswordLink", controller.ResetPasswordLink).Methods("POST")
 	// router.HandleFunc("/api/resetPassword", controller.ResetPassword).Methods("PUT")
 	subRouter := router.PathPrefix("/api").Subrouter()

@@ -5,7 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"golang-assignment/models/entities"
-	"golang-assignment/userService"
+	"golang-assignment/models/payloadmodels"
+	"golang-assignment/userservice"
 	"golang-assignment/utils"
 	"net/http"
 
@@ -20,21 +21,22 @@ var validate *validator.Validate
 
 // SignUp controller request handler
 func SignUp(response http.ResponseWriter, request *http.Request) {
+	// Decode payload from request
 	var user entities.User
-
 	decoderError := json.NewDecoder(request.Body).Decode(&user)
 	if decoderError != nil {
 		utils.GetError(decoderError, response)
 		return
 	}
-
+	// validate payload
 	validationError := validate.Struct(user)
 	if validationError != nil {
 		fmt.Println(validationError.(validator.ValidationErrors)[0].Translate(trans))
 		utils.GetError(errors.New(validationError.(validator.ValidationErrors)[0].Translate(trans)), response)
 		return
 	}
-	reqResponse, signError := userService.SignUp(user)
+	// create user and generate token for created user
+	reqResponse, signError := userservice.SignUp(user)
 	if signError != nil {
 		fmt.Println(signError)
 		utils.GetError(signError, response)
@@ -43,54 +45,32 @@ func SignUp(response http.ResponseWriter, request *http.Request) {
 	json.NewEncoder(response).Encode(reqResponse)
 }
 
-// // SignIn user request handler
-// func SignIn(response http.ResponseWriter, request *http.Request) {
-// 	var payload models.SignIn
-// 	decoderError := json.NewDecoder(request.Body).Decode(&payload)
-// 	if decoderError != nil {
-// 		utils.GetError(decoderError, response)
-// 		return
-// 	}
-
-// 	validationError := validate.Struct(payload)
-// 	if validationError != nil {
-// 		fmt.Println(validationError.(validator.ValidationErrors)[0].Translate(trans))
-// 		utils.GetError(errors.New(validationError.(validator.ValidationErrors)[0].Translate(trans)), response)
-// 		return
-// 	}
-
-// 	dbUser, err := fetchUserByEmail(payload.EMAIL)
-// 	if err != nil {
-// 		fmt.Println("Error occurred while creating user")
-// 		fmt.Println(err)
-// 		utils.GetError(err, response)
-// 		return
-// 	}
-// 	if isMatch, passError := auth.CompareHashAndPassword(dbUser.PASSWORD, payload.PASSWORD); !isMatch && passError != nil {
-// 		fmt.Println("Invalid login credentials")
-// 		fmt.Println(passError)
-// 		utils.GetError(passError, response)
-// 		return
-// 	}
-
-// 	token, tokenError := auth.GenerateToken(dbUser)
-// 	if tokenError != nil {
-// 		fmt.Println("Error occurred while creating user")
-// 		fmt.Println(tokenError)
-// 		utils.GetError(tokenError, response)
-// 		return
-// 	}
-
-// 	var reqResponse = map[string]interface{}{
-// 		"status":  true,
-// 		"message": "User Logged in successfully!",
-// 		"id":      dbUser.ID,
-// 		"name":    dbUser.NAME,
-// 		"email":   dbUser.EMAIL,
-// 		"token":   token,
-// 	}
-// 	json.NewEncoder(response).Encode(reqResponse)
-// }
+// SignIn user request handler
+func SignIn(response http.ResponseWriter, request *http.Request) {
+	// Decode payload from request
+	var payload payloadmodels.SignIn
+	decoderError := json.NewDecoder(request.Body).Decode(&payload)
+	if decoderError != nil {
+		utils.GetError(decoderError, response)
+		return
+	}
+	// validate payload
+	validationError := validate.Struct(payload)
+	if validationError != nil {
+		fmt.Println(validationError.(validator.ValidationErrors)[0].Translate(trans))
+		utils.GetError(errors.New(validationError.(validator.ValidationErrors)[0].Translate(trans)), response)
+		return
+	}
+	// sign in user and handle error if occured
+	reqResponse, signInError := userservice.SignIn(payload)
+	if signInError != nil {
+		fmt.Println("Error occurred while signin user")
+		fmt.Println(signInError)
+		utils.GetError(signInError, response)
+		return
+	}
+	json.NewEncoder(response).Encode(reqResponse)
+}
 
 // // ResetPasswordLink forget password for user request handler
 // func ResetPasswordLink(response http.ResponseWriter, request *http.Request) {

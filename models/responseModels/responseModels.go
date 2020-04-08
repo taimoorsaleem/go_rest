@@ -1,4 +1,4 @@
-package responseModels
+package responsemodels
 
 // SignupResponse signup response struct
 type SignupResponse struct {

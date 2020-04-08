@@ -1,10 +1,13 @@
-package userService
+package userservice
 
 import (
 	"context"
 	"fmt"
+
 	"golang-assignment/models/entities"
-	"golang-assignment/models/responseModels"
+	"golang-assignment/models/payloadmodels"
+	"golang-assignment/models/responsemodels"
+
 	"golang-assignment/utils"
 	"golang-assignment/utils/auth"
 
@@ -13,7 +16,7 @@ import (
 )
 
 // SignUp create user and return response
-func SignUp(user entities.User) (*responseModels.SignupResponse, error) {
+func SignUp(user entities.User) (*responsemodels.SignupResponse, error) {
 	user.PASSWORD, _ = auth.GeneratePassword(user.PASSWORD)
 	userCollection := utils.GetCollection(utils.GetUserTable())
 	insertedUser, insertError := userCollection.InsertOne(context.TODO(), user)
@@ -24,14 +27,14 @@ func SignUp(user entities.User) (*responseModels.SignupResponse, error) {
 	}
 	user.ID, _ = insertedUser.InsertedID.(primitive.ObjectID)
 
-	token, tokenError := auth.GenerateToken(user)
+	token, tokenError := auth.GenerateToken(&user)
 	if tokenError != nil {
 		fmt.Println("Error occurred while creating user")
 		fmt.Println(tokenError)
 		return nil, tokenError
 	}
 
-	var reqResponse = responseModels.SignupResponse{
+	var reqResponse = responsemodels.SignupResponse{
 		Status:  true,
 		Message: "User Signup successfully!",
 		Id:      user.ID.Hex(),
@@ -42,6 +45,38 @@ func SignUp(user entities.User) (*responseModels.SignupResponse, error) {
 	return &reqResponse, nil
 }
 
+// SignIn sign in user and create token
+func SignIn(payload payloadmodels.SignIn) (*responsemodels.SignupResponse, error) {
+	user, fetchUserError := fetchUserByEmail(payload.Email)
+	if fetchUserError != nil {
+		fmt.Println("Error occurred while creating user")
+		fmt.Println(fetchUserError)
+		return nil, fetchUserError
+	}
+	if isMatch, passMatchError := auth.CompareHashAndPassword(user.PASSWORD, payload.Password); !isMatch && passMatchError != nil {
+		fmt.Println("Invalid login credentials")
+		fmt.Println(passMatchError)
+		return nil, passMatchError
+	}
+	token, tokenError := auth.GenerateToken(user)
+	if tokenError != nil {
+		fmt.Println("Error occurred while creating user")
+		fmt.Println(tokenError)
+		return nil, tokenError
+	}
+
+	var reqResponse = responsemodels.SignupResponse{
+		Status:  true,
+		Message: "User Logged in successfully!",
+		Id:      user.ID.Hex(),
+		Name:    user.NAME,
+		Email:   user.EMAIL,
+		Token:   token,
+	}
+	return &reqResponse, nil
+}
+
+//***************************
 // fetchUserByEmail fetch user by email and return user object
 func fetchUserByEmail(email string) (*entities.User, error) {
 	var user entities.User
