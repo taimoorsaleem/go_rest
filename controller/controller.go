@@ -72,59 +72,34 @@ func SignIn(response http.ResponseWriter, request *http.Request) {
 	json.NewEncoder(response).Encode(reqResponse)
 }
 
-// // ResetPasswordLink forget password for user request handler
-// func ResetPasswordLink(response http.ResponseWriter, request *http.Request) {
-// 	var payload models.ResetPasswordLink
-// 	decoderError := json.NewDecoder(request.Body).Decode(&payload)
-// 	if decoderError != nil {
-// 		utils.GetError(decoderError, response)
-// 		return
-// 	}
-// 	// validate payload
-// 	validationError := validate.Struct(payload)
-// 	if validationError != nil {
-// 		fmt.Println(validationError.(validator.ValidationErrors)[0].Translate(trans))
-// 		utils.GetError(errors.New(validationError.(validator.ValidationErrors)[0].Translate(trans)), response)
-// 		return
-// 	}
-// 	// fetch DB user
-// 	dbUser, err := fetchUserByEmail(payload.EMAIL)
-// 	if err != nil {
-// 		fmt.Println("Error occurred while fetching user by email")
-// 		fmt.Println(err)
-// 		utils.GetError(err, response)
-// 		return
-// 	}
-// 	// generate token
-// 	token, tokenError := auth.GenerateToken(dbUser)
-// 	if tokenError != nil {
-// 		fmt.Println("Error occurred while generating token")
-// 		fmt.Println(tokenError)
-// 		utils.GetError(tokenError, response)
-// 		return
-// 	}
-// 	// Send email to request user with reset password link
-// 	emailBody := "Reset Password Link: \n http://localhost:8000/?token=" + token
-// 	isEmailSend, emailError := sendEmail(emailBody, dbUser)
-// 	if !isEmailSend && emailError != nil {
-// 		fmt.Println("Error occurred while sending email to user")
-// 		fmt.Println(emailError)
-// 		utils.GetError(emailError, response)
-// 		return
-// 	}
-// 	// set
-// 	resetTokenCollection := utils.GetCollection(utils.GetResetTokenTable())
-// 	// var updatedDocument bson.M
-// 	opt := options.FindOneAndUpdate().SetUpsert(true)
-// 	resetTokenCollection.FindOneAndUpdate(
-// 		context.TODO(),
-// 		bson.D{{"_id", dbUser.ID}},
-// 		bson.D{{"$set", bson.D{{"token", token}}}}, opt) //.Decode(updatedDocument)
-// 	json.NewEncoder(response).Encode(map[string]string{
-// 		"Message": "link created succssfully!",
-// 		"link":    emailBody,
-// 	})
-// }
+// ResetPasswordLink forget password for user request handler
+func ResetPasswordLink(response http.ResponseWriter, request *http.Request) {
+	// decode payload from request
+	var payload payloadmodels.ResetPasswordLink
+	decoderError := json.NewDecoder(request.Body).Decode(&payload)
+	if decoderError != nil {
+		utils.GetError(decoderError, response)
+		return
+	}
+	// validate payload
+	validationError := validate.Struct(payload)
+	if validationError != nil {
+		fmt.Println(validationError.(validator.ValidationErrors)[0].Translate(trans))
+		utils.GetError(errors.New(validationError.(validator.ValidationErrors)[0].Translate(trans)), response)
+		return
+	}
+	// send reset password link on email address and save token in db for validation
+	_, sendEmailError := userservice.ResetPasswordLink(payload)
+	if sendEmailError != nil {
+		fmt.Println("Error occurred while send reset password email to user")
+		fmt.Println(sendEmailError)
+		utils.GetError(sendEmailError, response)
+		return
+	}
+	json.NewEncoder(response).Encode(map[string]string{
+		"Message": "link created succssfully!",
+	})
+}
 
 // // ResetPassword reset user password of provided token
 // func ResetPassword(response http.ResponseWriter, request *http.Request) {
@@ -222,7 +197,7 @@ func SignIn(response http.ResponseWriter, request *http.Request) {
 // 	json.NewEncoder(response).Encode(users)
 // }
 
-// func sendEmail(body string, user models.User) (bool, error) {
+// func sendEmail(body string, user entities.User) (bool, error) {
 // 	to := user.EMAIL
 // 	pass := os.Getenv("password")
 // 	from := os.Getenv("from")
@@ -243,8 +218,8 @@ func SignIn(response http.ResponseWriter, request *http.Request) {
 // }
 
 // // fetchUserByEmail
-// func fetchUserByEmail(email string) (models.User, error) {
-// 	var user models.User = models.User{}
+// func fetchUserByEmail(email string) (entities.User, error) {
+// 	var user entities.User = entities.User{}
 // 	userCollection := utils.GetCollection(utils.GetUserTable())
 // 	err := userCollection.FindOne(context.TODO(), bson.M{"email": email}).Decode(&user)
 // 	if err != nil {

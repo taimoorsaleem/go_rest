@@ -3,6 +3,9 @@ package userservice
 import (
 	"context"
 	"fmt"
+	"log"
+	"net/smtp"
+	"os"
 
 	"golang-assignment/models/entities"
 	"golang-assignment/models/payloadmodels"
@@ -13,6 +16,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // SignUp create user and return response
@@ -76,7 +80,42 @@ func SignIn(payload payloadmodels.SignIn) (*responsemodels.SignupResponse, error
 	return &reqResponse, nil
 }
 
+// ResetPasswordLink validate user and send email on user account along with reset password link
+func ResetPasswordLink(payload payloadmodels.ResetPasswordLink) (bool, error) {
+	// fetch DB user
+	user, fetchUserError := fetchUserByEmail(payload.Email)
+	if fetchUserError != nil {
+		fmt.Println("Error occurred while fetching user by email")
+		fmt.Println(fetchUserError)
+		return false, fetchUserError
+	}
+	// generate token for user link
+	token, tokenError := auth.GenerateToken(user)
+	if tokenError != nil {
+		fmt.Println("Error occurred while generating token")
+		fmt.Println(tokenError)
+		return false, tokenError
+	}
+	// Send email to request user with reset password link
+	emailBody := "Reset Password Link: \n http://localhost:8000/?token=" + token
+	isEmailSend, emailError := sendEmail(emailBody, user)
+	if !isEmailSend && emailError != nil {
+		fmt.Println("Error occurred while sending email to user")
+		fmt.Println(emailError)
+		return false, emailError
+	}
+	// Upsert reset password link in DB
+	resetTokenCollection := utils.GetCollection(utils.GetResetTokenTable())
+	opt := options.FindOneAndUpdate().SetUpsert(true)
+	resetTokenCollection.FindOneAndUpdate(
+		context.TODO(),
+		bson.D{{"_id", user.ID}},
+		bson.D{{"$set", bson.D{{"token", token}}}}, opt)
+	return true, nil
+}
+
 //***************************
+
 // fetchUserByEmail fetch user by email and return user object
 func fetchUserByEmail(email string) (*entities.User, error) {
 	var user entities.User
@@ -87,4 +126,24 @@ func fetchUserByEmail(email string) (*entities.User, error) {
 		return nil, err
 	}
 	return &user, nil
+}
+
+// sendEmail send reset password link
+func sendEmail(body string, user *entities.User) (bool, error) {
+	to := user.EMAIL
+	pass := os.Getenv("password")
+	from := os.Getenv("from")
+	msg := "From: " + from + "\n" +
+		"To: " + to + "\n" +
+		"Subject: Reset Password\n\n" +
+		body
+	err := smtp.SendMail("smtp.gmail.com:25",
+		smtp.PlainAuth("", from, pass, "smtp.gmail.com"),
+		from, []string{to}, []byte(msg))
+
+	if err != nil {
+		log.Printf("smtp error: %s", err)
+		return false, err
+	}
+	return true, nil
 }
