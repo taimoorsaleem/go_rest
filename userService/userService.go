@@ -16,6 +16,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -114,6 +115,34 @@ func ResetPasswordLink(payload payloadmodels.ResetPasswordLink) (bool, error) {
 	return true, nil
 }
 
+// ResetPassword validate token and save new password in db
+func ResetPassword(payload payloadmodels.ResetPassword) (bool, error) {
+	// Fetch reset token document by provided token
+	var resetPasswordToken entities.ResetPasswordToken
+	resetTokenCollection := utils.GetCollection(utils.GetResetTokenTable())
+	resetPasswordTokenError := resetTokenCollection.FindOne(context.TODO(), bson.M{
+		"token": payload.Token,
+	}).Decode(&resetPasswordToken)
+	if resetPasswordTokenError != nil {
+		fmt.Println("Error occurred while checking provided token")
+		fmt.Println(resetPasswordTokenError)
+		return false, resetPasswordTokenError
+	}
+	// Generate new password
+	password, _ := auth.GeneratePassword(payload.Password)
+	// set new password for user in DB
+	updatePayload := bson.D{{
+		"$set", bson.D{
+			{"password", password},
+		},
+	},
+	}
+	findAndUpdate(resetPasswordToken.ID, updatePayload)
+	// Delete used token from db
+	resetTokenCollection.DeleteOne(context.TODO(), bson.M{"_id": resetPasswordToken.ID})
+	return true, nil
+}
+
 //***************************
 
 // fetchUserByEmail fetch user by email and return user object
@@ -146,4 +175,11 @@ func sendEmail(body string, user *entities.User) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+// findAndUpdate and update user
+func findAndUpdate(id primitive.ObjectID, updatePayload bson.D) *mongo.SingleResult {
+	userCollection := utils.GetCollection(utils.GetUserTable())
+	updatedUser := userCollection.FindOneAndUpdate(context.TODO(), bson.M{"_id": id}, updatePayload)
+	return updatedUser
 }

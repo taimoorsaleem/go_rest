@@ -10,3 +10,9 @@ type SignIn struct {
 type ResetPasswordLink struct {
 	Email string `validate:"required,email"`
 }
+
+// ResetPassword request paload
+type ResetPassword struct {
+	Password string `validate:"required,min=6,max=10"`
+	Token    string `validate:"required"`
+}

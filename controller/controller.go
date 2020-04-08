@@ -101,49 +101,34 @@ func ResetPasswordLink(response http.ResponseWriter, request *http.Request) {
 	})
 }
 
-// // ResetPassword reset user password of provided token
-// func ResetPassword(response http.ResponseWriter, request *http.Request) {
-// 	var payload models.ResetPassword
-// 	decoderError := json.NewDecoder(request.Body).Decode(&payload)
-// 	if decoderError != nil {
-// 		utils.GetError(decoderError, response)
-// 		return
-// 	}
-// 	// validate payload
-// 	validationError := validate.Struct(payload)
-// 	if validationError != nil {
-// 		fmt.Println(validationError.(validator.ValidationErrors)[0].Translate(trans))
-// 		utils.GetError(errors.New(validationError.(validator.ValidationErrors)[0].Translate(trans)), response)
-// 		return
-// 	}
-// 	// Fetch reset token document by provided token
-// 	var resetPasswordToken models.ResetPasswordToken
-// 	resetTokenCollection := utils.GetCollection(utils.GetResetTokenTable())
-// 	resetPasswordTokenError := resetTokenCollection.FindOne(context.TODO(), bson.M{
-// 		"token": payload.Token,
-// 	}).Decode(&resetPasswordToken)
-// 	if resetPasswordTokenError != nil {
-// 		fmt.Println("Error occurred while checking provided token")
-// 		fmt.Println(resetPasswordTokenError)
-// 		utils.GetError(resetPasswordTokenError, response)
-// 		return
-// 	}
-// 	// Generate password hash
-// 	password, _ := auth.GeneratePassword(payload.Password)
-// 	updatePayload := bson.D{{
-// 		"$set", bson.D{
-// 			{"password", password},
-// 		},
-// 	},
-// 	}
-// 	// Update user password
-// 	findAndUpdate(resetPasswordToken.ID, updatePayload)
-// 	// Delete used token
-// 	resetTokenCollection.DeleteOne(context.TODO(), bson.M{"_id": resetPasswordToken.ID})
-// 	json.NewEncoder(response).Encode(map[string]string{
-// 		"Message": "Password updated successfully!",
-// 	})
-// }
+// ResetPassword reset user password of provided token
+func ResetPassword(response http.ResponseWriter, request *http.Request) {
+	// Decode request payload
+	var payload payloadmodels.ResetPassword
+	decoderError := json.NewDecoder(request.Body).Decode(&payload)
+	if decoderError != nil {
+		utils.GetError(decoderError, response)
+		return
+	}
+	// validate payload
+	validationError := validate.Struct(payload)
+	if validationError != nil {
+		fmt.Println(validationError.(validator.ValidationErrors)[0].Translate(trans))
+		utils.GetError(errors.New(validationError.(validator.ValidationErrors)[0].Translate(trans)), response)
+		return
+	}
+	// Save new password in db
+	_, resetPassError := userservice.ResetPassword(payload)
+	if resetPassError != nil {
+		fmt.Println("Error occurred while checking provided token")
+		fmt.Println(resetPassError)
+		utils.GetError(resetPassError, response)
+		return
+	}
+	json.NewEncoder(response).Encode(map[string]string{
+		"Message": "Password updated successfully!",
+	})
+}
 
 // // ChangePassword request handler
 // func ChangePassword(response http.ResponseWriter, request *http.Request) {
