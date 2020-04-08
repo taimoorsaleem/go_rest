@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"golang-assignment/models"
+	"golang-assignment/models/entities"
 	"golang-assignment/utils"
 	"net/http"
 	"strings"
@@ -15,7 +16,7 @@ import (
 )
 
 // GenerateToken generate token with provided user claims
-func GenerateToken(user models.User) (string, error) {
+func GenerateToken(user entities.User) (string, error) {
 	expiresAt := time.Now().Add(time.Minute * 100000).Unix()
 	tokenClaims := &models.Token{
 		ID:    user.ID.String(),
