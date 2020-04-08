@@ -2,12 +2,12 @@ package utils
 
 import (
 	"context"
-	"golang-assignment/models"
+	"golang-assignment/models/payloadmodels"
 )
 
 // GetContextTokenClaims return user token claims
-func GetContextTokenClaims(requestContext context.Context) *models.Token {
-	return requestContext.Value(GetUserTable()).(*models.Token)
+func GetContextTokenClaims(requestContext context.Context) *payloadmodels.Token {
+	return requestContext.Value(GetUserTable()).(*payloadmodels.Token)
 }
 
 // const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
