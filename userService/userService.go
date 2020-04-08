@@ -171,11 +171,16 @@ func ChangePassword(payload payloadmodels.ChangePassword, user *payloadmodels.To
 }
 
 // FetchUsers fetch all usersdata
-func FetchUsers() (*[]entities.User, error){
+func FetchUsers() (*[]entities.User, error) {
 	var users []entities.User
 	// Load all user
 	userCollection := utils.GetCollection(utils.GetUserTable())
-	cursor, err := userCollection.Find(context.TODO(), bson.M{})
+	option := options.Find().SetProjection(map[string]int{
+		"_id":   1,
+		"name":  1,
+		"email": 1,
+	})
+	cursor, err := userCollection.Find(context.TODO(), bson.M{}, option)
 	if err != nil {
 		fmt.Println(err)
 		fmt.Println(err)
@@ -189,6 +194,7 @@ func FetchUsers() (*[]entities.User, error){
 	}
 	return &users, nil
 }
+
 //***************************
 
 // fetchUserByEmail fetch user by email and return user object
