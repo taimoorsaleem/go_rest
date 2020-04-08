@@ -8,10 +8,11 @@ import (
 	"golang-assignment/utils"
 	"golang-assignment/utils/auth"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// SignUp
+// SignUp create user and return response
 func SignUp(user entities.User) (*responseModels.SignupResponse, error) {
 	user.PASSWORD, _ = auth.GeneratePassword(user.PASSWORD)
 	userCollection := utils.GetCollection(utils.GetUserTable())
@@ -39,4 +40,16 @@ func SignUp(user entities.User) (*responseModels.SignupResponse, error) {
 		Token:   token,
 	}
 	return &reqResponse, nil
+}
+
+// fetchUserByEmail fetch user by email and return user object
+func fetchUserByEmail(email string) (*entities.User, error) {
+	var user entities.User
+	userCollection := utils.GetCollection(utils.GetUserTable())
+	err := userCollection.FindOne(context.TODO(), bson.M{"email": email}).Decode(&user)
+	if err != nil {
+		fmt.Println("Error occurred while fetching user by email ", err)
+		return nil, err
+	}
+	return &user, nil
 }

@@ -41,35 +41,6 @@ func SignUp(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 	json.NewEncoder(response).Encode(reqResponse)
-
-	// user.PASSWORD, _ = auth.GeneratePassword(user.PASSWORD)
-	// userCollection := utils.GetCollection(utils.GetUserTable())
-	// insertedUser, insertError := userCollection.InsertOne(context.TODO(), user)
-	// if insertError != nil {
-	// 	fmt.Println("Error occurred while creating user")
-	// 	fmt.Println(insertError)
-	// 	utils.GetError(insertError, response)
-	// 	return
-	// }
-	// user.ID, _ = insertedUser.InsertedID.(primitive.ObjectID)
-
-	// token, tokenError := auth.GenerateToken(user)
-	// if tokenError != nil {
-	// 	fmt.Println("Error occurred while creating user")
-	// 	fmt.Println(tokenError)
-	// 	utils.GetError(tokenError, response)
-	// 	return
-	// }
-
-	// var reqResponse = map[string]interface{}{
-	// 	"status":  true,
-	// 	"message": "User Signup successfully!",
-	// 	"id":      user.ID,
-	// 	"name":    user.NAME,
-	// 	"email":   user.EMAIL,
-	// 	"token":   token,
-	// }
-	// json.NewEncoder(response).Encode(reqResponse)
 }
 
 // // SignIn user request handler
