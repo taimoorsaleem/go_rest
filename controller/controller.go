@@ -161,11 +161,15 @@ func ChangePassword(response http.ResponseWriter, request *http.Request) {
 	})
 }
 
-// // FetchUsers fetch all user request handler
-// func FetchUsers(response http.ResponseWriter, request *http.Request) {
-// 	users := fetchUsers()
-// 	json.NewEncoder(response).Encode(users)
-// }
+// FetchUsers fetch all user request handler
+func FetchUsers(response http.ResponseWriter, request *http.Request) {
+	users, fetchUsersError := userservice.FetchUsers()
+	if fetchUsersError != nil {
+		utils.GetError(fetchUsersError, response)
+		return
+	}
+	json.NewEncoder(response).Encode(users)
+}
 
 // func sendEmail(body string, user entities.User) (bool, error) {
 // 	to := user.EMAIL
