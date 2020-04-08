@@ -90,6 +90,21 @@ func AuthenticateMiddleware(next http.Handler) http.Handler {
 			json.NewEncoder(response).Encode(map[string]interface{}{"Message": err.Error()})
 			return
 		}
+
+		// authenticationToken, authError := controller.FetchAuthenticationToken(bson.M{"access_token": token})
+		// if err != nil {
+		// 	response.WriteHeader(http.StatusForbidden)
+		// 	json.NewEncoder(response).Encode(map[string]interface{}{"Message": err.Error()})
+		// 	return
+		// }
+
+		// fmt.Println("authenticationToken")
+		// fmt.Println(authenticationToken.ACCESSTOKEN)
+		// if authenticationToken.ACCESSTOKEN != token {
+		// 	response.WriteHeader(http.StatusForbidden)
+		// 	json.NewEncoder(response).Encode(map[string]interface{}{"Message": "Invalid Error"})
+		// 	return
+		// }
 		userContext := context.WithValue(request.Context(), utils.GetUserTable(), tokenClaims)
 		next.ServeHTTP(response, request.WithContext(userContext))
 	})
