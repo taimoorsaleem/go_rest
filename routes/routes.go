@@ -21,6 +21,6 @@ func Handlers() *mux.Router {
 
 func protectedRoute(subRoute *mux.Router) {
 	subRoute.Use(auth.AuthenticateMiddleware)
-	subRoute.HandleFunc("/user", controller.FetchUsers).Methods("GET")
+	subRoute.HandleFunc("/users", controller.FetchUsers).Methods("GET")
 	subRoute.HandleFunc("/changepassword", controller.ChangePassword).Methods("PUT")
 }

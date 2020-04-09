@@ -56,8 +56,9 @@ func CompareHashAndPassword(dbPassword string, userPassword string) (bool, error
 // AuthenticateMiddleware use to authenicate user
 func AuthenticateMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
-		var token string = request.Header.Get("x-access-token")
+		var token string = request.Header.Get("Authorization")
 		token = strings.TrimSpace(token)
+		token = strings.Replace(token, "Bearer ", "", 1)
 		if token == "" {
 			response.WriteHeader(http.StatusForbidden)
 			json.NewEncoder(response).Encode(map[string]interface{}{"Message": "Missing auth token"})
