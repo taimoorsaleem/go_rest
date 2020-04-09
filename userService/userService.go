@@ -2,6 +2,7 @@ package userservice
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/smtp"
@@ -22,6 +23,13 @@ import (
 
 // SignUp create user and return response
 func SignUp(user entities.User) (*responsemodels.SignupResponse, error) {
+	// check email already exist
+	dbUser, _ := fetchUserByEmail(user.EMAIL)
+	if dbUser != nil {
+		fmt.Println("Email already exists")
+		fmt.Println(dbUser)
+		return nil, errors.New("Email already exists")
+	}
 	user.PASSWORD, _ = auth.GeneratePassword(user.PASSWORD)
 	userCollection := utils.GetCollection(utils.GetUserTable())
 	insertedUser, insertError := userCollection.InsertOne(context.TODO(), user)
