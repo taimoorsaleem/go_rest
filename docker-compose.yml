@@ -9,8 +9,8 @@ services:
         databaseName: 'golang-db'
     ports:
       - 8000:8000
-    # volumes:
-    #   - .:/usr/src/app
+    #volumes:
+    #  - .:/src/golang-assignment
     depends_on:
       - mongo
   mongo:

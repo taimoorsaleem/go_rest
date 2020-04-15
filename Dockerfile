@@ -7,7 +7,7 @@ FROM golang:alpine
 
 # Move to working directory /build
 
-WORKDIR src/golang-assignment
+WORKDIR /src/golang-assignment
 
 # Copy and download dependency using go mod
 COPY go.mod .
