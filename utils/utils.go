@@ -2,7 +2,7 @@ package utils
 
 import (
 	"context"
-	"golang-assignment/models/payloadmodels"
+	"go_rest/models/payloadmodels"
 )
 
 // GetContextTokenClaims return user token claims

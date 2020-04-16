@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"golang-assignment/controller"
-	"golang-assignment/utils/auth"
+	"go_rest/controller"
+	"go_rest/utils/auth"
 
 	"github.com/gorilla/mux"
 )

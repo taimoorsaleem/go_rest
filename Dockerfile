@@ -7,7 +7,7 @@ FROM golang:alpine
 
 # Move to working directory /build
 
-WORKDIR /src/golang-assignment
+WORKDIR /src/go_rest
 
 # Copy and download dependency using go mod
 COPY go.mod .
@@ -17,11 +17,15 @@ RUN go mod download
 # Copy the code into the container
 COPY . .
 
+RUN go get github.com/githubnemo/CompileDaemon
+
+ENTRYPOINT CompileDaemon --build="go build -o main ." --command=./main
+
 # Build the application
-RUN go build -o main .
+#RUN go build -o main .
 
 # Move to /dist directory as the place for resulting binary folder
-#WORKDIR "/go/src/golang-assignment"
+#WORKDIR "/go/src/go_rest"
 
 # Copy binary from build to main folder
 #RUN cp /build/main .
@@ -30,4 +34,4 @@ RUN go build -o main .
 EXPOSE 8000
 
 # Command to run when starting the container
-CMD ["./main"]
+#CMD ["./main"]

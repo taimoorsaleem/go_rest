@@ -10,7 +10,7 @@ services:
     ports:
       - 8000:8000
     #volumes:
-    #  - .:/src/golang-assignment
+    #  - .:/src/go_rest
     depends_on:
       - mongo
   mongo:
