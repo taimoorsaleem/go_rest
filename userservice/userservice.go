@@ -8,12 +8,12 @@ import (
 	"net/smtp"
 	"os"
 
-	"golang-assignment/models/entities"
-	"golang-assignment/models/payloadmodels"
-	"golang-assignment/models/responsemodels"
+	"go_rest/models/entities"
+	"go_rest/models/payloadmodels"
+	"go_rest/models/responsemodels"
 
-	"golang-assignment/utils"
-	"golang-assignment/utils/auth"
+	"go_rest/utils"
+	"go_rest/utils/auth"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
